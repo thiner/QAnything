@@ -91,15 +91,15 @@ echo "gpu_memory_utilization is set to [$gpu_memory_utilization]"
 
 start_time=$(date +%s)  # 记录开始时间 
 
-mkdir -p /model_repos/QAEnsemble_embed_rerank && mkdir -p /workspace/qanything_local/logs/debug_logs && mkdir -p /workspace/qanything_local/logs/qa_logs
+mkdir -p  mkdir -p /workspace/qanything_local/logs/debug_logs && mkdir -p /workspace/qanything_local/logs/qa_logs
 
-if [ ! -L "/model_repos/QAEnsemble_embed_rerank/rerank" ]; then
-  cd /model_repos/QAEnsemble_embed_rerank && ln -s /model_repos/QAEnsemble/rerank .
-fi
+# if [ ! -L "/model_repos/QAEnsemble_embed_rerank/rerank" ]; then
+#   cd /model_repos/QAEnsemble_embed_rerank && ln -s /model_repos/QAEnsemble/rerank .
+# fi
 
-if [ ! -L "/model_repos/QAEnsemble_embed_rerank/embed" ]; then
-  cd /model_repos/QAEnsemble_embed_rerank && ln -s /model_repos/QAEnsemble/embed .
-fi
+# if [ ! -L "/model_repos/QAEnsemble_embed_rerank/embed" ]; then
+#   cd /model_repos/QAEnsemble_embed_rerank && ln -s /model_repos/QAEnsemble/embed .
+# fi
 
 # 设置默认值
 default_gpu_id1=0
@@ -138,7 +138,7 @@ else
     OCR_USE_GPU="False"
 fi
 echo "OCR_USE_GPU=$OCR_USE_GPU because $compute_capability >= 7.5"
-update_or_append_to_env "OCR_USE_GPU" "$OCR_USE_GPU"
+# update_or_append_to_env "OCR_USE_GPU" "$OCR_USE_GPU"
 
 # 使用nvidia-smi命令获取GPU的显存大小（以MiB为单位）
 GPU1_MEMORY_SIZE=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits -i $gpu_id1)
@@ -147,9 +147,13 @@ if [ "$GPU1_MEMORY_SIZE" -lt 4000 ]; then # 显存小于4GB
     exit 1
 fi
 
+if [ -z "$BCE_MODEL_PATH" ]; then
+    BCE_MODEL_PATH = "/model_repos/QAEnsemble_embed_rerank"
+fi
+echo "BCE_MODEL_PATH is set to [$BCE_MODEL_PATH]"
 
 echo "The embed and rerank model will start on $gpu_id1 GPU"
-CUDA_VISIBLE_DEVICES=$gpu_id1 nohup /opt/tritonserver/bin/tritonserver --model-store=/model_repos/QAEnsemble_embed_rerank --http-port=9000 --grpc-port=9001 --metrics-port=9002 --log-verbose=1 > /workspace/qanything_local/logs/debug_logs/embed_rerank_tritonserver.log 2>&1 &
+CUDA_VISIBLE_DEVICES=$gpu_id1 nohup /opt/tritonserver/bin/tritonserver --model-store=$BCE_MODEL_PATH --http-port=9000 --grpc-port=9001 --metrics-port=9002 --log-verbose=1 > /workspace/qanything_local/logs/debug_logs/embed_rerank_tritonserver.log 2>&1 &
 
 update_or_append_to_env "EMBED_PORT" "9001"
 update_or_append_to_env "RERANK_PORT" "9001"
